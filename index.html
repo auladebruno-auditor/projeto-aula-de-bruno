@@ -1,1 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Lista de Alunos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      background: #007bff;
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li {
+      padding: 10px;
+    }
+
+    li:nth-child(odd) {
+      background: #f2f2f2;
+    }
+
+    li:nth-child(even) {
+      background: #e9ecef;
+    }
+
+    .loading {
+      text-align: center;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Lista de Alunos</h1>
+
+  <div class="form">
+    <input type="text" id="name" placeholder="Digite o nome do aluno">
+    <button onclick="addStudent()">Salvar</button>
+  </div>
+
+  <div id="status" class="loading">Carregando...</div>
+  <ul id="list"></ul>
+</div>
+
+<script>
+  // 
+  const CONFIG = {
+    API_URL:  "https://script.google.com/macros/s/AKfycbxWjQ5YOt067pTwHKSdp4-_a_W4j_VKpwRENmI_PELriqp9Rn6Mp1HKK_kd_TG1-nBx/exec"
+  };
+
+  // JSONP helper
+  function jsonp(url, callbackName) {
+    const script = document.createElement("script");
+    script.src = url + "&callback=" + callbackName;
+    document.body.appendChild(script);
+
+    setTimeout(() => {
+      document.body.removeChild(script);
+    }, 5000);
+  }
+
+  function loadStudents() {
+    document.getElementById("status").innerText = "Carregando...";
+
+    const callbackName = "cb_list_" + Date.now();
+
+    window[callbackName] = function(data) {
+      const list = document.getElementById("list");
+      list.innerHTML = "";
+
+      if (data.length === 0) {
+        document.getElementById("status").innerText = "Nenhum aluno cadastrado.";
+        return;
+      }
+
+      document.getElementById("status").innerText = "";
+
+      data.forEach(student => {
+        const li = document.createElement("li");
+        li.textContent = student.nome;
+        list.appendChild(li);
+      });
+
+      delete window[callbackName];
+    };
+
+    jsonp(CONFIG.API_URL + "?action=list", callbackName);
+  }
+
+  function addStudent() {
+    const input = document.getElementById("name");
+    const name = input.value.trim();
+
+    if (!name) {
+      alert("Digite um nome!");
+      return;
+    }
+
+    const callbackName = "cb_add_" + Date.now();
+
+    window[callbackName] = function(response) {
+      input.value = "";
+      loadStudents();
+      delete window[callbackName];
+    };
+
+    const url = CONFIG.API_URL +
+      "?action=add&name=" + encodeURIComponent(name);
+
+    jsonp(url, callbackName);
+  }
+
+  // Inicializar
+  loadStudents();
+</script>
+
+</body>
+</html>
